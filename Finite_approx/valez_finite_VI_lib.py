@@ -5,12 +5,15 @@ Created on Mon Apr 17 11:10:41 2017
 @author: Haiying Liang
 """
 
-import numpy as np
-import scipy as sp
-import scipy.special
+# import numpy as np
+# import scipy as sp
+import autograd.numpy as np
+import autograd.scipy as sp
+#from sp import special
+from autograd.scipy import special
 import matplotlib.pyplot as plt
 from copy import deepcopy
-import math
+#import math
 
 # from beta_process_vb_lib import *
 
@@ -131,7 +134,9 @@ def Elbo(tau, nu, phi_mu, phi_var, X, sigmas, Data_shape, alpha):
             1 / (2 * sigma_eps) * (
                 np.dot(X[n,:], X[n,:]) - 2 * summ1 + 2 * summ2 + summ3)
 
-    elbo_term5 = np.sum(sp.special.betaln(tau[:,0],tau[:,1]) - \
+    elbo_term5 = \
+        np.sum(sp.special.gammaln(tau[:,0]) + sp.special.gammaln(tau[:,1]) - \
+               sp.special.gammaln(tau[:,0] + tau[:,1]) - \
         (tau[:,0] - 1) * sp.special.digamma(tau[:,0]) - \
         (tau[:,1] - 1) * sp.special.digamma(tau[:,1]) + \
         (tau[:,0] + tau[:,1] -2) *  sp.special.digamma(tau[:,0] + tau[:,1]))
