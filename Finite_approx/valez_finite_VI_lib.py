@@ -103,21 +103,21 @@ def Elbo(tau, nu, phi_mu, phi_var, X, sigmas, Data_shape, alpha):
     K = Data_shape['K']
 
     # bernoulli terms
-    eblo_term1 = np.sum( np.log(alpha/K) + (alpha/K - 1)*(sp.special.digamma(tau[k,0]) \
+    elbo_term1 = np.sum( np.log(alpha/K) + (alpha/K - 1)*(sp.special.digamma(tau[k,0]) \
                   - sp.special.digamma(tau[k,0] + tau[k, 1])) for k in range(K))
 
-    eblo_term2 = 0
+    elbo_term2 = 0
     for k in range(K):
         for n in range(N):
-            eblo_term2 += nu[n,k] * sp.special.digamma(tau[k,0]) + (1-nu[n,k])*\
+            elbo_term2 += nu[n,k] * sp.special.digamma(tau[k,0]) + (1-nu[n,k])*\
                     sp.special.digamma(tau[k,1]) \
                     - sp.special.digamma(tau[k,0]+tau[k,1])
 
-    eblo_term3 = np.sum(-D/2*np.log(2*np.pi*sigma_A) - 1/(2*sigma_A) *\
+    elbo_term3 = np.sum(-D/2*np.log(2*np.pi*sigma_A) - 1/(2*sigma_A) *\
         (phi_var[k]*D + \
         np.dot(phi_mu[:, k] , phi_mu[:, k])) for k in range(K) )
 
-    eblo_term4 = 0
+    elbo_term4 = 0
     for n in range(N):
         summ1 = np.sum(nu[n,k] * np.dot(phi_mu[:,k], X[n,:]) for k in range(K))
         summ2 = np.sum(
@@ -127,28 +127,26 @@ def Elbo(tau, nu, phi_mu, phi_var, X, sigmas, Data_shape, alpha):
         summ3 = np.sum(nu[n,k] * (D*phi_var[k] + \
             np.dot(phi_mu[:,k], phi_mu[:,k])) for k in range(K))
 
-        eblo_term4 += - D / 2 * np.log(2 * np.pi * sigma_eps) - \
+        elbo_term4 += - D / 2 * np.log(2 * np.pi * sigma_eps) - \
             1 / (2 * sigma_eps) * (
                 np.dot(X[n,:], X[n,:]) - 2 * summ1 + 2 * summ2 + summ3)
 
-    eblo_term5 = np.sum(sp.special.betaln(tau[:,0],tau[:,1]) - \
+    elbo_term5 = np.sum(sp.special.betaln(tau[:,0],tau[:,1]) - \
         (tau[:,0] - 1) * sp.special.digamma(tau[:,0]) - \
         (tau[:,1] - 1) * sp.special.digamma(tau[:,1]) + \
         (tau[:,0] + tau[:,1] -2) *  sp.special.digamma(tau[:,0] + tau[:,1]))
 
-    eblo_term6 = np.sum(1 / 2 * np.log((2 * np.pi * np.exp(1)) ** D * \
+    elbo_term6 = np.sum(1 / 2 * np.log((2 * np.pi * np.exp(1)) ** D * \
         phi_var[k]**D) for k in range(K))
 
-    eblo_term7 = np.sum(np.sum( -np.log(nu ** nu) - np.log((1-nu) ** (1-nu)) ))
+    elbo_term7 = np.sum(np.sum( -np.log(nu ** nu) - np.log((1-nu) ** (1-nu)) ))
 
-    elbo = eblo_term1 + eblo_term2 + eblo_term3 + eblo_term4 + eblo_term5 + eblo_term6 + eblo_term7
+    elbo = elbo_term1 + elbo_term2 + elbo_term3 + elbo_term4 + elbo_term5 + elbo_term6 + elbo_term7
 
-    return(elbo, eblo_term1, eblo_term2, eblo_term3, eblo_term4, eblo_term5, eblo_term6, eblo_term7)
+    return(elbo, elbo_term1, elbo_term2, elbo_term3, elbo_term4, elbo_term5, elbo_term6, elbo_term7)
 
 
 def generate_data(Num_samples, D, K_inf, sigma_A, sigma_eps):
-    #np.random.seed(12321) # this is a seed where VI works well
-
     Pi = np.ones(K_inf) * .8
     Z = np.zeros([Num_samples, K_inf])
 
@@ -173,7 +171,6 @@ def generate_data(Num_samples, D, K_inf, sigma_A, sigma_eps):
 
 
 def initialize_parameters(Num_samples, D, K_approx):
-
     tau = np.random.uniform(0, 1, [K_approx, 2]) # tau1, tau2 -- beta parameters for v
     nu =  np.random.uniform(0, 1, [Num_samples, K_approx]) # Bernoulli parameter for z_nk
 
