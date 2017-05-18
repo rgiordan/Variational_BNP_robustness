@@ -45,6 +45,23 @@ def phi_updates(nu, phi_mu, phi_var, X, sigmas, Data_shape):
         phi_mu[:,k] = (1 / s_eps) * phi_summation\
                  * (1 / s_A + np.sum(nu[:, k]) / s_eps)**(-1)
 
+
+def get_nu(tau, phi_mu, phi_var, X, sigmas, Data_shape):
+    s_eps = sigmas['eps']
+    K = Data_shape['K']
+    N = Data_shape['N']
+    D = Data_shape['D']
+
+    nu_term1 = [[ sp.special.digamma(tau[k, 0]) - sp.special.digamma(tau[k, 1])
+                  for n in range(N) ] for k in range(K) ]
+    nu_term2 = [[ (1. / (2. * s_eps)) * (phi_var[k] * D + np.dot(phi_mu[:, k], phi_mu[:, k]))
+                  for n in range(N) ] for k in range(K) ]
+    nu_term1 = [[ (1./s_eps) * np.dot(phi_mu[:, k], X[n, :] - np.dot(phi_mu, nu[n, :]) + nu[n,k] * phi_mu[:, k])
+                  for n in range(N) ] for k in range(K) ]
+
+    return 1. / (1. + np.exp(-(nu_term1 - nu_term2 + nu_term3)))
+
+
 def nu_updates(tau, nu, phi_mu, phi_var, X, sigmas, Data_shape):
 
     s_eps = sigmas['eps']
@@ -52,40 +69,15 @@ def nu_updates(tau, nu, phi_mu, phi_var, X, sigmas, Data_shape):
     N = Data_shape['N']
     D = Data_shape['D']
 
-
     for n in range(N):
         for k in range(K):
-
-            nu_term1 = sp.special.digamma(tau[k,0]) - sp.special.digamma(tau[k,1])
-
-            nu_term2 = (1. / (2. * s_eps)) * (phi_var[k]*D + np.dot(phi_mu[:,k], phi_mu[:,k]))
-
-
+            nu_term1 = sp.special.digamma(tau[k, 0]) - sp.special.digamma(tau[k, 1])
+            nu_term2 = (1. / (2. * s_eps)) * (phi_var[k] * D + np.dot(phi_mu[:, k], phi_mu[:, k]))
             nu_term3 = (1./s_eps) * np.dot(phi_mu[:, k], X[n, :] - np.dot(phi_mu, nu[n, :]) + nu[n,k] * phi_mu[:, k])
-
-            #if k==4 and n==3:
-            #    print(nu_term2,nu_term3)
-
-            #explit calculation of Term3
-#            dum = 0
-#            for l in range(K):
-#                if (l != k):
-#                    dum += nu[n,l] * phi_mu[:,l]
-#
-#            nu_term3_alt = (1 / s_eps) * np.dot(phi_mu[:,k], X[n,:] - dum)
-#
-#            if np.abs(nu_term3 - nu_term3_alt)>10**(-10):
-#                print(nu_term3-nu_term3_alt)
-#                print('calculation of nu_term3 is off')
-#                input('paused')
-
-
-            #if k==0 and n==0:
-            #    print(nu_term1, nu_term2, nu_term3)
 
             script_V = nu_term1 - nu_term2 + nu_term3
 
-            nu[n,k] = 1./(1.+np.exp(-script_V))
+            nu[n,k] = 1. / (1. + np.exp(-script_V))
 
 
 
